@@ -50,7 +50,7 @@ CLYNORA features a ChatGPT-inspired full-screen immersive voice assistant interf
   - `Error / Disconnected`: Non-intrusive alert state with 1-click retry.
 - **State Tester Bar:** Built-in one-click buttons (`Idle`, `Listening`, `Processing`, `Speaking`, `Muted`) enabling evaluators to inspect every visual state immediately.
 - **Role-Aware Suggestions:** Clinical suggestions tailored for Doctors, Nurses, Patients, and Attenders.
-- **Multilingual Support:** Instant UI and speech language switching between **English**, **Tamil (தமிழ்)**, and **Hindi (हिन्दी)**.
+
 
 ---
 
