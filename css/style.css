@@ -1,4 +1,4 @@
-/* CLYNORA — Clinical Wearable Deterioration Monitoring Platform
+﻿/* CLYNORA — Clinical Wearable Deterioration Monitoring Platform
    Neumorphic Clinical Technology Design System */
 
 :root {
@@ -1209,4 +1209,19 @@ tbody tr:hover {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01s !important;
   }
+}
+
+/* Blue mobile sidebar toggle */
+#mb {
+  background: #2563eb;
+  color: #ffffff;
+  border: 1px solid #2563eb;
+  border-radius: 8px;
+}
+
+/* Force the sidebar menu button blue */
+button#mb {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+  border: 1px solid #2563eb !important;
 }

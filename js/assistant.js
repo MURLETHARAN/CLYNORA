@@ -204,25 +204,25 @@ function generateAIAnswer(query) {
 
     if (lang === 'ta') {
       return `<strong>${patient.name} (à®µà®¾à®°à¯à®Ÿà¯ ${patient.ward}/à®ªà®Ÿà¯à®•à¯à®•à¯ˆ ${patient.bed}) à®®à®°à¯à®¤à¯à®¤à¯à®µ à®šà¯à®°à¯à®•à¯à®•à®®à¯:</strong><br>` +
-        `â€¢ à®‡à®¤à®¯à®¤à¯ à®¤à¯à®Ÿà®¿à®ªà¯à®ªà¯: ${hr ? hr.v + ' bpm' : 'N/A'} (à®…à®Ÿà®¿à®ªà¯à®ªà®Ÿà¯ˆ à®…à®³à®µà¯: ${patient.base || 'à®¨à®¿à®°à¯à®£à®¯à®¿à®•à¯à®•à®ªà¯à®ªà®Ÿà®µà®¿à®²à¯à®²à¯ˆ'} bpm)<br>` +
-        `â€¢ SpOâ‚‚ à®†à®•à¯à®šà®¿à®œà®©à¯: ${spo2 ? spo2.v + ' %' : 'N/A'}<br>` +
-        `â€¢ à®‰à®Ÿà®²à¯ à®µà¯†à®ªà¯à®ªà®¨à®¿à®²à¯ˆ: ${temp ? temp.v + ' Â°C' : 'N/A'}<br>` +
-        `â€¢ à®†à®°à®®à¯à®ª à®Žà®šà¯à®šà®°à®¿à®•à¯à®•à¯ˆ à®®à®¤à®¿à®ªà¯à®ªà¯†à®£à¯: <strong>${ews.total}</strong> (${ews.alert ? 'âš ï¸ à®†à®ªà®¤à¯à®¤à¯ à®µà®°à®®à¯à®ªà¯ à®¤à®¾à®£à¯à®Ÿà®¿à®¯à®¤à¯ - à®ªà®Ÿà¯à®•à¯à®•à¯ˆ à®µà®´à®¿ à®šà¯‹à®¤à®©à¯ˆ à®¤à¯‡à®µà¯ˆ' : 'âœ… à®ªà®¾à®¤à¯à®•à®¾à®ªà¯à®ªà®¾à®© à®µà®°à®®à¯à®ªà®¿à®±à¯à®•à¯à®³à¯ à®‰à®³à¯à®³à®¤à¯'})<br>` +
+        `\u2022 à®‡à®¤à®¯à®¤à¯ à®¤à¯à®Ÿà®¿à®ªà¯à®ªà¯: ${hr ? hr.v + ' bpm' : 'N/A'} (à®…à®Ÿà®¿à®ªà¯à®ªà®Ÿà¯ˆ à®…à®³à®µà¯: ${patient.base || 'à®¨à®¿à®°à¯à®£à®¯à®¿à®•à¯à®•à®ªà¯à®ªà®Ÿà®µà®¿à®²à¯à®²à¯ˆ'} bpm)<br>` +
+        `\u2022 SpO\u2082‚ à®†à®•à¯à®šà®¿à®œà®©à¯: ${spo2 ? spo2.v + ' %' : 'N/A'}<br>` +
+        `\u2022 à®‰à®Ÿà®²à¯ à®µà¯†à®ªà¯à®ªà®¨à®¿à®²à¯ˆ: ${temp ? temp.v + ' \u00B0C' : 'N/A'}<br>` +
+        `\u2022 à®†à®°à®®à¯à®ª à®Žà®šà¯à®šà®°à®¿à®•à¯à®•à¯ˆ à®®à®¤à®¿à®ªà¯à®ªà¯†à®£à¯: <strong>${ews.total}</strong> (${ews.alert ? 'âš ï¸ à®†à®ªà®¤à¯à®¤à¯ à®µà®°à®®à¯à®ªà¯ à®¤à®¾à®£à¯à®Ÿà®¿à®¯à®¤à¯ - à®ªà®Ÿà¯à®•à¯à®•à¯ˆ à®µà®´à®¿ à®šà¯‹à®¤à®©à¯ˆ à®¤à¯‡à®µà¯ˆ' : '\u{2705} à®ªà®¾à®¤à¯à®•à®¾à®ªà¯à®ªà®¾à®© à®µà®°à®®à¯à®ªà®¿à®±à¯à®•à¯à®³à¯ à®‰à®³à¯à®³à®¤à¯'})<br>` +
         `<small class="mut">à®¤à®•à®µà®²à¯ à®šà¯†à®©à¯à®šà®¾à®°à¯ à®®à®¾à®¤à®¿à®°à®¿à®¤à¯ à®¤à®°à®µà¯ˆ à®…à®Ÿà®¿à®ªà¯à®ªà®Ÿà¯ˆà®¯à®¾à®•à®•à¯ à®•à¯Šà®£à¯à®Ÿà®¤à¯. à®®à¯à®Ÿà®¿à®µà¯ à®†à®¤à®°à®µà¯ à®•à®°à¯à®µà®¿ à®®à®Ÿà¯à®Ÿà¯à®®à¯‡.</small>`;
     } else if (lang === 'hi') {
       return `<strong>${patient.name} (à¤µà¤¾à¤°à¥à¤¡ ${patient.ward}/à¤¬à¥‡à¤¡ ${patient.bed}) à¤•à¤¾ à¤•à¥à¤²à¤¿à¤¨à¤¿à¤•à¤² à¤¸à¤¾à¤°à¤¾à¤‚à¤¶:</strong><br>` +
-        `â€¢ à¤¹à¥ƒà¤¦à¤¯ à¤—à¤¤à¤¿: ${hr ? hr.v + ' bpm' : 'N/A'} (à¤¬à¥‡à¤¸à¤²à¤¾à¤‡à¤¨: ${patient.base || 'à¤¸à¥‡à¤Ÿ à¤¨à¤¹à¥€à¤‚'} bpm)<br>` +
-        `â€¢ SpOâ‚‚ à¤‘à¤•à¥à¤¸à¥€à¤œà¤¨: ${spo2 ? spo2.v + ' %' : 'N/A'}<br>` +
-        `â€¢ à¤¶à¤°à¥€à¤° à¤•à¤¾ à¤¤à¤¾à¤ªà¤®à¤¾à¤¨: ${temp ? temp.v + ' Â°C' : 'N/A'}<br>` +
-        `â€¢ à¤ªà¥à¤°à¤¾à¤°à¤‚à¤­à¤¿à¤• à¤šà¥‡à¤¤à¤¾à¤µà¤¨à¥€ à¤¸à¥à¤•à¥‹à¤°: <strong>${ews.total}</strong> (${ews.alert ? 'âš ï¸ à¤—à¤¿à¤°à¤¾à¤µà¤Ÿ à¤¸à¥€à¤®à¤¾ à¤ªà¤¾à¤° à¤¹à¥à¤ˆ - à¤¤à¥à¤°à¤‚à¤¤ à¤¬à¥‡à¤¡à¤¸à¤¾à¤‡à¤¡ à¤¸à¤®à¥€à¤•à¥à¤·à¤¾ à¤•à¤°à¥‡à¤‚' : 'âœ… à¤¸à¥à¤°à¤•à¥à¤·à¤¿à¤¤ à¤¸à¥€à¤®à¤¾à¤“à¤‚ à¤•à¥‡ à¤­à¥€à¤¤à¤°'})<br>` +
+        `\u2022 à¤¹à¥ƒà¤¦à¤¯ à¤—à¤¤à¤¿: ${hr ? hr.v + ' bpm' : 'N/A'} (à¤¬à¥‡à¤¸à¤²à¤¾à¤‡à¤¨: ${patient.base || 'à¤¸à¥‡à¤Ÿ à¤¨à¤¹à¥€à¤‚'} bpm)<br>` +
+        `\u2022 SpO\u2082‚ à¤‘à¤•à¥à¤¸à¥€à¤œà¤¨: ${spo2 ? spo2.v + ' %' : 'N/A'}<br>` +
+        `\u2022 à¤¶à¤°à¥€à¤° à¤•à¤¾ à¤¤à¤¾à¤ªà¤®à¤¾à¤¨: ${temp ? temp.v + ' \u00B0C' : 'N/A'}<br>` +
+        `\u2022 à¤ªà¥à¤°à¤¾à¤°à¤‚à¤­à¤¿à¤• à¤šà¥‡à¤¤à¤¾à¤µà¤¨à¥€ à¤¸à¥à¤•à¥‹à¤°: <strong>${ews.total}</strong> (${ews.alert ? 'âš ï¸ à¤—à¤¿à¤°à¤¾à¤µà¤Ÿ à¤¸à¥€à¤®à¤¾ à¤ªà¤¾à¤° à¤¹à¥à¤ˆ - à¤¤à¥à¤°à¤‚à¤¤ à¤¬à¥‡à¤¡à¤¸à¤¾à¤‡à¤¡ à¤¸à¤®à¥€à¤•à¥à¤·à¤¾ à¤•à¤°à¥‡à¤‚' : '\u{2705} à¤¸à¥à¤°à¤•à¥à¤·à¤¿à¤¤ à¤¸à¥€à¤®à¤¾à¤“à¤‚ à¤•à¥‡ à¤­à¥€à¤¤à¤°'})<br>` +
         `<small class="mut">à¤¯à¤¹ à¤†à¤‰à¤Ÿà¤ªà¥à¤Ÿ à¤Ÿà¥‡à¤²à¥€à¤®à¥‡à¤Ÿà¥à¤°à¥€ à¤¨à¤®à¥‚à¤¨à¤¾ à¤¡à¥‡à¤Ÿà¤¾ à¤ªà¤° à¤†à¤§à¤¾à¤°à¤¿à¤¤ à¤¹à¥ˆà¥¤ à¤•à¥‡à¤µà¤² à¤¨à¤¿à¤°à¥à¤£à¤¯ à¤¸à¤®à¤°à¥à¤¥à¤¨ à¤•à¥‡ à¤²à¤¿à¤à¥¤</small>`;
     }
 
     return `<strong>Clinical Summary for ${patient.name} (Ward ${patient.ward}/Bed ${patient.bed}):</strong><br>` +
-      `â€¢ Heart Rate: ${hr ? hr.v + ' bpm' : 'N/A'} (Baseline: ${patient.base || 'Not set'} bpm)<br>` +
-      `â€¢ SpOâ‚‚: ${spo2 ? spo2.v + ' %' : 'N/A'}<br>` +
-      `â€¢ Core Temperature: ${temp ? temp.v + ' Â°C' : 'N/A'}<br>` +
-      `â€¢ Early Warning Score: <strong>${ews.total}</strong> (${ews.alert ? 'âš ï¸ Deterioration Threshold Crossed' : 'âœ… Within safe parameters'})<br>` +
+      `\u2022 Heart Rate: ${hr ? hr.v + ' bpm' : 'N/A'} (Baseline: ${patient.base || 'Not set'} bpm)<br>` +
+      `\u2022 SpO\u2082: ${spo2 ? spo2.v + ' %' : 'N/A'}<br>` +
+      `\u2022 Core Temperature: ${temp ? temp.v + ' \u00B0C' : 'N/A'}<br>` +
+      `\u2022 Early Warning Score: <strong>${ews.total}</strong> (${ews.alert ? '\u{26A0}\u{FE0F} Deterioration Threshold Crossed' : '\u{2705} Within safe parameters'})<br>` +
       `<small class="mut">Decision support output based on wearable telemetry. Last updated: ${hr ? tm(hr.t) : 'Never'}.</small>`;
   }
 
@@ -230,28 +230,28 @@ function generateAIAnswer(query) {
   if (isConcernsQuery) {
     const unrev = (window.S && window.S.concerns) ? window.S.concerns.filter(c => c.status === 'unreviewed') : [];
     if (unrev.length === 0) {
-      if (lang === 'ta') return "âœ… à®¤à®±à¯à®ªà¯‹à®¤à¯ à®¨à®¿à®²à¯à®µà¯ˆà®¯à®¿à®²à¯ à®‰à®³à¯à®³ à®•à®µà®²à¯ˆà®•à®³à¯ à®à®¤à¯à®®à®¿à®²à¯à®²à¯ˆ. à®…à®©à¯ˆà®¤à¯à®¤à¯ à®•à¯‹à®°à®¿à®•à¯à®•à¯ˆà®•à®³à¯à®®à¯ à®šà¯†à®µà®¿à®²à®¿à®¯à®°à®¾à®²à¯ à®ªà®°à®¿à®šà¯€à®²à®¿à®•à¯à®•à®ªà¯à®ªà®Ÿà¯à®Ÿà¯à®³à¯à®³à®©.";
-      if (lang === 'hi') return "âœ… à¤µà¤°à¥à¤¤à¤®à¤¾à¤¨ à¤®à¥‡à¤‚ à¤•à¥‹à¤ˆ à¤…à¤¨à¤¸à¥à¤²à¤à¥€ à¤šà¤¿à¤‚à¤¤à¤¾à¤à¤‚ à¤¨à¤¹à¥€à¤‚ à¤¹à¥ˆà¤‚à¥¤ à¤¸à¤­à¥€ à¤¤à¥€à¤®à¤¾à¤°à¤¦à¤¾à¤° à¤…à¤¨à¥à¤°à¥‹à¤§à¥‹à¤‚ à¤ªà¤° à¤§à¥à¤¯à¤¾à¤¨ à¤¦à¤¿à¤¯à¤¾ à¤—à¤¯à¤¾ à¤¹à¥ˆà¥¤";
-      return "âœ… There are currently no unreviewed concerns. All submitted attender requests have been attended by nursing staff.";
+      if (lang === 'ta') return "\u{2705} à®¤à®±à¯à®ªà¯‹à®¤à¯ à®¨à®¿à®²à¯à®µà¯ˆà®¯à®¿à®²à¯ à®‰à®³à¯à®³ à®•à®µà®²à¯ˆà®•à®³à¯ à®à®¤à¯à®®à®¿à®²à¯à®²à¯ˆ. à®…à®©à¯ˆà®¤à¯à®¤à¯ à®•à¯‹à®°à®¿à®•à¯à®•à¯ˆà®•à®³à¯à®®à¯ à®šà¯†à®µà®¿à®²à®¿à®¯à®°à®¾à®²à¯ à®ªà®°à®¿à®šà¯€à®²à®¿à®•à¯à®•à®ªà¯à®ªà®Ÿà¯à®Ÿà¯à®³à¯à®³à®©.";
+      if (lang === 'hi') return "\u{2705} à¤µà¤°à¥à¤¤à¤®à¤¾à¤¨ à¤®à¥‡à¤‚ à¤•à¥‹à¤ˆ à¤…à¤¨à¤¸à¥à¤²à¤à¥€ à¤šà¤¿à¤‚à¤¤à¤¾à¤à¤‚ à¤¨à¤¹à¥€à¤‚ à¤¹à¥ˆà¤‚à¥¤ à¤¸à¤­à¥€ à¤¤à¥€à¤®à¤¾à¤°à¤¦à¤¾à¤° à¤…à¤¨à¥à¤°à¥‹à¤§à¥‹à¤‚ à¤ªà¤° à¤§à¥à¤¯à¤¾à¤¨ à¤¦à¤¿à¤¯à¤¾ à¤—à¤¯à¤¾ à¤¹à¥ˆà¥¤";
+      return "\u{2705} There are currently no unreviewed concerns. All submitted attender requests have been attended by nursing staff.";
     }
 
     if (lang === 'ta') {
       const list = unrev.map(c => {
         const p = getPatient(c.pid);
-        return `â€¢ <strong>${p ? p.name : 'à®¨à¯‹à®¯à®¾à®³à®¿'} (à®µà®¾à®°à¯à®Ÿà¯ ${p ? p.ward + '/' + p.bed : 'â€”'}):</strong> ${c.type} â€” "${c.text}" (à®…à®©à¯à®ªà¯à®ªà®¿à®¯à®µà®°à¯: ${c.attender})`;
+        return `\u2022 <strong>${p ? p.name : 'à®¨à¯‹à®¯à®¾à®³à®¿'} (à®µà®¾à®°à¯à®Ÿà¯ ${p ? p.ward + '/' + p.bed : '\u2014'}):</strong> ${c.type} \u2014 "${c.text}" (à®…à®©à¯à®ªà¯à®ªà®¿à®¯à®µà®°à¯: ${c.attender})`;
       }).join('<br>');
       return `<strong>à®ªà®°à®¿à®šà¯€à®²à®¿à®•à¯à®•à®ªà¯à®ªà®Ÿà®¾à®¤ à®•à¯‹à®°à®¿à®•à¯à®•à¯ˆà®•à®³à¯ (${unrev.length}):</strong><br>${list}<br><small class="mut">à®µà®¾à®°à¯à®Ÿà¯ à®•à®µà®²à¯ˆà®•à®³à¯ à®ªà®•à¯à®•à®¤à¯à®¤à®¿à®²à¯ à®‡à®¤à®©à¯ˆ à®šà®°à®¿à®ªà®¾à®°à¯à®•à¯à®•à®µà¯à®®à¯.</small>`;
     } else if (lang === 'hi') {
       const list = unrev.map(c => {
         const p = getPatient(c.pid);
-        return `â€¢ <strong>${p ? p.name : 'à¤®à¤°à¥€à¤œ'} (à¤µà¤¾à¤°à¥à¤¡ ${p ? p.ward + '/' + p.bed : 'â€”'}):</strong> ${c.type} â€” "${c.text}" (à¤ªà¥à¤°à¤¸à¥à¤¤à¥à¤¤à¤•à¤°à¥à¤¤à¤¾: ${c.attender})`;
+        return `\u2022 <strong>${p ? p.name : 'à¤®à¤°à¥€à¤œ'} (à¤µà¤¾à¤°à¥à¤¡ ${p ? p.ward + '/' + p.bed : '\u2014'}):</strong> ${c.type} \u2014 "${c.text}" (à¤ªà¥à¤°à¤¸à¥à¤¤à¥à¤¤à¤•à¤°à¥à¤¤à¤¾: ${c.attender})`;
       }).join('<br>');
       return `<strong>à¤…à¤¨à¤¸à¥à¤²à¤à¥€ à¤¤à¥€à¤®à¤¾à¤°à¤¦à¤¾à¤° à¤šà¤¿à¤‚à¤¤à¤¾à¤à¤‚ (${unrev.length}):</strong><br>${list}<br><small class="mut">à¤•à¥ƒà¤ªà¤¯à¤¾ à¤µà¤¾à¤°à¥à¤¡ à¤šà¤¿à¤‚à¤¤à¤¾à¤à¤‚ à¤Ÿà¥ˆà¤¬ à¤®à¥‡à¤‚ à¤¸à¤®à¥€à¤•à¥à¤·à¤¾ à¤•à¤°à¥‡à¤‚à¥¤</small>`;
     }
 
     const list = unrev.map(c => {
       const p = getPatient(c.pid);
-      return `â€¢ <strong>${p ? p.name : 'Unknown'} (${p ? p.ward + '/' + p.bed : 'N/A'}):</strong> ${c.type} â€” "${c.text}" (Submitted by ${c.attender}, ${timeAgo(c.t)})`;
+      return `\u2022 <strong>${p ? p.name : 'Unknown'} (${p ? p.ward + '/' + p.bed : 'N/A'}):</strong> ${c.type} \u2014 "${c.text}" (Submitted by ${c.attender}, ${timeAgo(c.t)})`;
     }).join('<br>');
     return `<strong>Unreviewed Attender & Patient Concerns (${unrev.length}):</strong><br>${list}<br><small class="mut">Please review and mark acknowledged in the Ward Concerns tab.</small>`;
   }
@@ -269,14 +269,14 @@ function generateAIAnswer(query) {
       const details = attentionList.map(p => {
         const ews = calcEWS(p);
         const hr = getLatestVital(p.id, 'hr');
-        return `â€¢ <strong>${p.name}</strong> Â· à®µà®¾à®°à¯à®Ÿà¯ ${p.ward} à®ªà®Ÿà¯à®•à¯à®•à¯ˆ ${p.bed} (EWS à®®à®¤à®¿à®ªà¯à®ªà¯†à®£à¯: ${ews.total}) â€” ${hr ? hr.v + ' bpm' : ''}`;
+        return `\u2022 <strong>${p.name}</strong> \u00B7 à®µà®¾à®°à¯à®Ÿà¯ ${p.ward} à®ªà®Ÿà¯à®•à¯à®•à¯ˆ ${p.bed} (EWS à®®à®¤à®¿à®ªà¯à®ªà¯†à®£à¯: ${ews.total}) \u2014 ${hr ? hr.v + ' bpm' : ''}`;
       }).join('<br>');
       return `<strong>à®‰à®Ÿà®©à®Ÿà®¿ à®ªà®Ÿà¯à®•à¯à®•à¯ˆ à®µà®´à®¿ à®•à®µà®©à®®à¯ à®¤à¯‡à®µà¯ˆà®ªà¯à®ªà®Ÿà¯à®®à¯ à®¨à¯‹à®¯à®¾à®³à®¿à®•à®³à¯ (${attentionList.length}):</strong><br>${details}<br><small class="mut">à®ªà®°à®¿à®¨à¯à®¤à¯à®°à¯ˆ: à®‰à®Ÿà®©à®Ÿà®¿ à®ªà®Ÿà¯à®•à¯à®•à¯ˆ à®µà®´à®¿ à®šà¯‹à®¤à®©à¯ˆ à®®à®±à¯à®±à¯à®®à¯ à®…à®³à®µà¯€à®Ÿà¯ à®šà®°à®¿à®ªà®¾à®°à¯à®ªà¯à®ªà¯.</small>`;
     } else if (lang === 'hi') {
       const details = attentionList.map(p => {
         const ews = calcEWS(p);
         const hr = getLatestVital(p.id, 'hr');
-        return `â€¢ <strong>${p.name}</strong> Â· à¤µà¤¾à¤°à¥à¤¡ ${p.ward} à¤¬à¥‡à¤¡ ${p.bed} (EWS à¤¸à¥à¤•à¥‹à¤°: ${ews.total}) â€” ${hr ? hr.v + ' bpm' : ''}`;
+        return `\u2022 <strong>${p.name}</strong> \u00B7 à¤µà¤¾à¤°à¥à¤¡ ${p.ward} à¤¬à¥‡à¤¡ ${p.bed} (EWS à¤¸à¥à¤•à¥‹à¤°: ${ews.total}) \u2014 ${hr ? hr.v + ' bpm' : ''}`;
       }).join('<br>');
       return `<strong>à¤¤à¥à¤°à¤‚à¤¤ à¤¬à¥‡à¤¡à¤¸à¤¾à¤‡à¤¡ à¤§à¥à¤¯à¤¾à¤¨ à¤¦à¥‡à¤¨à¥‡ à¤¯à¥‹à¤—à¥à¤¯ à¤®à¤°à¥€à¤œ (${attentionList.length}):</strong><br>${details}<br><small class="mut">à¤…à¤¨à¥à¤¶à¤‚à¤¸à¤¿à¤¤ à¤•à¤¾à¤°à¥à¤°à¤µà¤¾à¤ˆ: à¤¤à¥à¤°à¤‚à¤¤ à¤¬à¥‡à¤¡à¤¸à¤¾à¤‡à¤¡ à¤Ÿà¥à¤°à¤¾à¤‡à¤à¤œ à¤”à¤° à¤µà¤¾à¤‡à¤Ÿà¤² à¤¸à¤¤à¥à¤¯à¤¾à¤ªà¤¨à¥¤</small>`;
     }
@@ -284,7 +284,7 @@ function generateAIAnswer(query) {
     const details = attentionList.map(p => {
       const ews = calcEWS(p);
       const hr = getLatestVital(p.id, 'hr');
-      return `â€¢ <strong>${p.name}</strong> Â· Ward ${p.ward} Bed ${p.bed} (EWS Score: ${ews.total}) â€” ${hr ? hr.v + ' bpm' : ''}`;
+      return `\u2022 <strong>${p.name}</strong> \u00B7 Ward ${p.ward} Bed ${p.bed} (EWS Score: ${ews.total}) \u2014 ${hr ? hr.v + ' bpm' : ''}`;
     }).join('<br>');
     return `<strong>Patients Requiring Immediate Bedside Attention (${attentionList.length}):</strong><br>${details}<br><small class="mut">Recommended action: Immediate bedside triage check and vital sign verification.</small>`;
   }
@@ -301,20 +301,20 @@ function generateAIAnswer(query) {
     if (lang === 'ta') {
       const list = openAlerts.map(a => {
         const p = getPatient(a.pid);
-        return `â€¢ <strong>[${(a.level || 'alert').toUpperCase()}] ${p ? p.name : 'à®¨à¯‹à®¯à®¾à®³à®¿'}:</strong> ${a.cat} â€” ${a.desc}`;
+        return `\u2022 <strong>[${(a.level || 'alert').toUpperCase()}] ${p ? p.name : 'à®¨à¯‹à®¯à®¾à®³à®¿'}:</strong> ${a.cat} \u2014 ${a.desc}`;
       }).join('<br>');
       return `<strong>à®šà¯†à®¯à®²à®¿à®²à¯ à®‰à®³à¯à®³ à®à®±à¯à®•à®ªà¯à®ªà®Ÿà®¾à®¤ à®Žà®šà¯à®šà®°à®¿à®•à¯à®•à¯ˆà®•à®³à¯ (${openAlerts.length}):</strong><br>${list}`;
     } else if (lang === 'hi') {
       const list = openAlerts.map(a => {
         const p = getPatient(a.pid);
-        return `â€¢ <strong>[${(a.level || 'alert').toUpperCase()}] ${p ? p.name : 'à¤®à¤°à¥€à¤œ'}:</strong> ${a.cat} â€” ${a.desc}`;
+        return `\u2022 <strong>[${(a.level || 'alert').toUpperCase()}] ${p ? p.name : 'à¤®à¤°à¥€à¤œ'}:</strong> ${a.cat} \u2014 ${a.desc}`;
       }).join('<br>');
       return `<strong>à¤¸à¤•à¥à¤°à¤¿à¤¯ à¤…à¤¨à¤¸à¥à¤µà¥€à¤•à¥ƒà¤¤ à¤…à¤²à¤°à¥à¤Ÿ (${openAlerts.length}):</strong><br>${list}`;
     }
 
     const list = openAlerts.map(a => {
       const p = getPatient(a.pid);
-      return `â€¢ <strong>[${a.level.toUpperCase()}] ${p ? p.name : 'Patient'}:</strong> ${a.cat} â€” ${a.desc} (${timeAgo(a.t)})`;
+      return `\u2022 <strong>[${a.level.toUpperCase()}] ${p ? p.name : 'Patient'}:</strong> ${a.cat} \u2014 ${a.desc} (${timeAgo(a.t)})`;
     }).join('<br>');
     return `<strong>Active Unacknowledged Alerts (${openAlerts.length}):</strong><br>${list}`;
   }
@@ -331,20 +331,20 @@ function generateAIAnswer(query) {
     if (lang === 'ta') {
       const list = pendingMeds.map(m => {
         const p = getPatient(m.pid);
-        return `â€¢ <strong>${m.med}</strong> - ${p ? p.name : 'à®¨à¯‹à®¯à®¾à®³à®¿'} (à®¨à¯‡à®°à®®à¯: ${m.due}) â€” ${m.notes}`;
+        return `\u2022 <strong>${m.med}</strong> - ${p ? p.name : 'à®¨à¯‹à®¯à®¾à®³à®¿'} (à®¨à¯‡à®°à®®à¯: ${m.due}) \u2014 ${m.notes}`;
       }).join('<br>');
       return `<strong>à®¨à®¿à®²à¯à®µà¯ˆà®¯à®¿à®²à¯ à®‰à®³à¯à®³ à®®à®°à¯à®¨à¯à®¤à¯ à®šà®°à®¿à®ªà®¾à®°à¯à®ªà¯à®ªà¯à®•à®³à¯ (${pendingMeds.length}):</strong><br>${list}`;
     } else if (lang === 'hi') {
       const list = pendingMeds.map(m => {
         const p = getPatient(m.pid);
-        return `â€¢ <strong>${m.med}</strong> - ${p ? p.name : 'à¤®à¤°à¥€à¤œ'} (à¤¸à¤®à¤¯: ${m.due}) â€” ${m.notes}`;
+        return `\u2022 <strong>${m.med}</strong> - ${p ? p.name : 'à¤®à¤°à¥€à¤œ'} (à¤¸à¤®à¤¯: ${m.due}) \u2014 ${m.notes}`;
       }).join('<br>');
       return `<strong>à¤²à¤‚à¤¬à¤¿à¤¤ à¤¦à¤µà¤¾ à¤¸à¤®à¥€à¤•à¥à¤·à¤¾à¤à¤‚ (${pendingMeds.length}):</strong><br>${list}`;
     }
 
     const list = pendingMeds.map(m => {
       const p = getPatient(m.pid);
-      return `â€¢ <strong>${m.med}</strong> for ${p ? p.name : 'Patient'} (Due: ${m.due}) â€” ${m.notes}`;
+      return `\u2022 <strong>${m.med}</strong> for ${p ? p.name : 'Patient'} (Due: ${m.due}) \u2014 ${m.notes}`;
     }).join('<br>');
     return `<strong>Pending Medication Reviews (${pendingMeds.length}):</strong><br>${list}`;
   }

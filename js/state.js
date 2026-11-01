@@ -113,7 +113,7 @@ function logAction(action, category = "Clinical") {
 
 // Time formatter
 function tm(timestamp, format = 'short') {
-  if (!timestamp) return 'â€”';
+  if (!timestamp) return '\u2014';
   const d = new Date(timestamp);
   if (format === 'timeOnly') {
     return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -127,7 +127,7 @@ function tm(timestamp, format = 'short') {
 }
 
 function timeAgo(t) {
-  if (!t) return 'â€”';
+  if (!t) return '\u2014';
   const sec = Math.floor((Date.now() - t) / 1000);
   if (sec < 60) return `${sec}s ago`;
   const min = Math.floor(sec / 60);
@@ -182,7 +182,7 @@ function calcEWS(patient) {
     const pts = sp.v >= 96 ? 0 : sp.v >= 94 ? 1 : sp.v >= 92 ? 2 : 3;
     rows.push({
       key: 'spo2',
-      label: typeof t === 'function' ? t('vitals_spo2') : 'SpOâ‚‚ Saturation',
+      label: typeof t === 'function' ? t('vitals_spo2') : 'SpO\u2082‚ Saturation',
       val: `${sp.v} %`,
       pts,
       raw: sp.v,
@@ -196,7 +196,7 @@ function calcEWS(patient) {
     rows.push({
       key: 'temp',
       label: typeof t === 'function' ? t('vitals_temp') : 'Temperature',
-      val: `${tp.v} Â°C`,
+      val: `${tp.v} \u00B0C`,
       pts,
       raw: tp.v,
       source: tp.s,
@@ -215,16 +215,42 @@ function calcEWS(patient) {
 // Ingest reading
 function pushVital(pid, key, val, source = 'device') {
   if (!S.v[pid]) S.v[pid] = [];
+
+  const recordedAt = Date.now();
+  const numericValue = Number(val);
+
   S.v[pid].push({
-    t: Date.now(),
+    t: recordedAt,
     k: key,
-    v: +val,
+    v: numericValue,
     s: source
   });
+
   // Maintain max 1000 readings per patient
   if (S.v[pid].length > 1000) S.v[pid].shift();
-}
 
+  // Persist only patients loaded from Supabase
+  const patient = S.p.find(p => Number(p.id) === Number(pid));
+  const supabase = window.supabaseClient;
+
+  if (patient?.dbBacked && supabase && Number.isFinite(numericValue)) {
+    supabase
+      .from('vitals')
+      .insert({
+        patient_id: Number(pid),
+        recorded_at_ms: recordedAt,
+        vital_type: key,
+        value: numericValue,
+        source
+      })
+      .then(({ error }) => {
+        if (error) console.error("Could not save vital to Supabase:", error);
+      })
+      .catch(error => {
+        console.error("Vital save request failed:", error);
+      });
+  }
+}
 // Evaluate deterioration and update alert status
 function evaluatePatient(patient) {
   const ews = calcEWS(patient);
@@ -370,4 +396,5 @@ function ingestSerialPacket(data, patient) {
   });
   evaluatePatient(patient);
 }
+
 

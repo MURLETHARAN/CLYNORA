@@ -1,4 +1,4 @@
-// CLYNORA Application Core Engine
+﻿// CLYNORA Application Core Engine
 // Role-based routing, portal switching, clinical dashboards, and user actions.
 // Full multilingual support (en, ta, hi) throughout every component.
 
@@ -210,6 +210,11 @@ function login() {
 }
 
 function openLoginCredentials(role) {
+  if (U && U.role === role) {
+    activePortal = role;
+    openApp();
+    return;
+  }
   const needsPatientLink = (role === 'pat' || role === 'att');
 
   modal(`
@@ -240,51 +245,177 @@ function openLoginCredentials(role) {
     </div>
   `);
 }
-function submitLogin(role) {
+async function submitLogin(role) {
   const uid = document.getElementById('uid').value.trim();
   const pwd = document.getElementById('pwd').value;
+
   if (!uid || !pwd) {
     showToast("Please enter your User ID and password");
     return;
   }
 
-  let pid = null;
-  if (role === 'pat' || role === 'att') {
-    pid = +document.getElementById('linkedPid').value;
+  // Demo-only mapping: CLYNORA User ID -> Supabase Auth email.
+  const demoAccounts = {
+    DEMO_DOC_001: {
+      email: 'm.roshini10440@gmail.com',
+      role: 'doc'
+    }
+  };
+
+  const account = demoAccounts[uid];
+  if (!account || account.role !== role) {
+    showToast("Invalid User ID or portal");
+    return;
   }
 
-  const names = {
-    doc: uid,
-    nurse: uid,
-    pat: getPatient(pid)?.name || uid,
-    att: uid,
-    admin: uid
-  };
+  const supabase = window.supabaseClient;
+  if (!supabase) {
+    showToast("Authentication service is unavailable");
+    return;
+  }
+
+  const { data: authData, error: authError } =
+    await supabase.auth.signInWithPassword({
+      email: account.email,
+      password: pwd
+    });
+
+  if (authError || !authData.user) {
+    showToast("Invalid User ID or password");
+    return;
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('id, user_id, role, display_name, patient_id')
+    .eq('id', authData.user.id)
+    .single();
+
+  if (
+    profileError ||
+    !profile ||
+    profile.user_id !== uid ||
+    profile.role !== role
+  ) {
+    await supabase.auth.signOut();
+    showToast("This account is not authorized for this portal");
+    return;
+  }
 
   U = {
-    id: uid,
-    name: names[role] || uid,
-    role: role,
-    pid: pid
+    id: profile.user_id,
+    name: profile.display_name || profile.user_id,
+    role: profile.role,
+    pid: profile.patient_id || null
   };
 
-  activePortal = role;
-  if (pid) cur = pid;
+  activePortal = profile.role;
+  if (U.pid) cur = U.pid;
+
+  try {
+    await loadSupabasePatients();
+  } catch (error) {
+    console.error("Could not load patients from Supabase:", error);
+    showToast("Could not load patient records");
+  }
+
   closeModal();
   saveSession();
   logAction(`User ${U.name} authenticated successfully`, "Auth");
   openApp();
-  showToast(`Signed in to ${getRoleDisplayName(role)}`);
+  showToast(`Signed in to ${getRoleDisplayName(profile.role)}`);
 }
 
-function logout() {
-  logAction(`User ${U ? U.name : 'Unknown'} signed out`, "Auth");
+async function logout() {
+  const signedOutUser = U ? U.name : 'Unknown';
+
+  try {
+    if (window.supabaseClient) {
+      const { error } = await window.supabaseClient.auth.signOut();
+      if (error) {
+        console.error("Supabase sign-out failed:", error.message);
+        showToast("Could not sign out from the authentication service");
+        return;
+      }
+    }
+  } catch (error) {
+    console.error("Supabase sign-out failed:", error);
+    showToast("Could not sign out from the authentication service");
+    return;
+  }
+
+  logAction(`User ${signedOutUser} signed out`, "Auth");
   U = null;
   saveSession();
   go('home');
   showToast(t('logoutBtn'));
 }
 
+async function loadSupabasePatients() {
+  const supabase = window.supabaseClient;
+  if (!supabase) throw new Error("Supabase client is unavailable");
+
+  const { data, error } = await supabase
+    .from('patients')
+    .select('id, name, age, gender, ward, bed, status, is_active, baseline_hr, condition, doctor, nurse, bp, rr, motion, auto_alert, device_id')
+    .order('id');
+
+  if (error) throw error;
+
+  S.p = (data || []).map(row => ({
+    id: Number(row.id),
+      dbBacked: true,
+    name: row.name || "Unnamed patient",
+    age: row.age ?? "—",
+    gender: row.gender || "—",
+    ward: row.ward || "—",
+    bed: row.bed || "—",
+    status: row.status === "unchecked" ? "unchecked" : "checked",
+    on: row.is_active !== false,
+    base: row.baseline_hr ?? null,
+    condition: row.condition || "—",
+    doctor: row.doctor || "—",
+    nurse: row.nurse || "—",
+    bp: row.bp || "—",
+    rr: row.rr ?? null,
+    motion: row.motion || "—",
+    autoAlert: row.auto_alert === true,
+    dev: row.device_id || "ESP32"
+  }));
+
+  // Restore saved vital readings from Supabase
+  const { data: vitalRows, error: vitalError } = await supabase
+    .from('vitals')
+    .select('id, patient_id, recorded_at_ms, vital_type, value, source')
+    .order('recorded_at_ms', { ascending: true });
+
+  if (vitalError) {
+    console.error("Could not load saved vitals from Supabase:", vitalError);
+  } else {
+    for (const row of (vitalRows || [])) {
+      const pid = Number(row.patient_id);
+      if (!S.v[pid]) S.v[pid] = [];
+
+      // Avoid adding the same database row twice
+      if (S.v[pid].some(v => v.dbId === row.id)) continue;
+
+      S.v[pid].push({
+        dbId: row.id,
+        t: Number(row.recorded_at_ms),
+        k: row.vital_type,
+        v: Number(row.value),
+        s: row.source || 'device'
+      });
+    }
+
+    for (const records of Object.values(S.v)) {
+      records.sort((a, b) => a.t - b.t);
+    }
+  }
+  if (!U.pid && S.p.length) cur = S.p[0].id;
+  D.pid = cur;
+  window.cur = cur;
+}
 function openApp() {
   if (!U) {
     login();
@@ -397,11 +528,11 @@ function renderSidebar() {
     <div class="portal-switch-box">
       <span class="portal-switch-label">${t('portalSwitcherLabel')}</span>
       <select class="portal-switch-select" onchange="switchPortal(this.value)">
-        <option value="doc" ${activePortal === 'doc' ? 'selected' : ''}>🩺 ${t('docPortal')}</option>
-        <option value="nurse" ${activePortal === 'nurse' ? 'selected' : ''}>📋 ${t('nursePortal')}</option>
-        <option value="pat" ${activePortal === 'pat' ? 'selected' : ''}>👤 ${t('patientPortal')}</option>
-        <option value="att" ${activePortal === 'att' ? 'selected' : ''}>🤝 ${t('attenderPortal')}</option>
-        <option value="admin" ${activePortal === 'admin' ? 'selected' : ''}>⚙️ ${t('adminPortal')}</option>
+        <option value="doc" ${activePortal === 'doc' ? 'selected' : ''}>${t('docPortal')}</option>
+        <option value="nurse" ${activePortal === 'nurse' ? 'selected' : ''}>${t('nursePortal')}</option>
+        <option value="pat" ${activePortal === 'pat' ? 'selected' : ''}>${t('patientPortal')}</option>
+        <option value="att" ${activePortal === 'att' ? 'selected' : ''}>${t('attenderPortal')}</option>
+        <option value="admin" ${activePortal === 'admin' ? 'selected' : ''}>${t('adminPortal')}</option>
       </select>
     </div>
   ` : '';
@@ -431,7 +562,7 @@ function renderSidebar() {
 
     <div style="margin-top:auto;padding-top:16px;border-top:1px solid rgba(22,30,62,0.07)">
       <button onclick="openVoiceMode()" style="background:linear-gradient(145deg,rgba(56,189,248,0.2),rgba(58,91,217,0.2));color:var(--pri);border:1px solid rgba(56,189,248,0.4)">
-        ✨ ${t('btn_voice_mode')}
+        ${t('btn_voice_mode')}
       </button>
       <button onclick="go('home')">${t('homeBtn')}</button>
       <button class="red" onclick="logout()">${t('logoutBtn')}</button>
@@ -451,14 +582,14 @@ function renderPatientSelectorBar() {
         <select id="patientSelector" style="max-width:380px;margin:0" onchange="cur=+this.value;saveSession();draw()">
           ${S.p.map(p => `
             <option value="${p.id}" ${p.id === cur ? 'selected' : ''}>
-              ${p.name} · Ward ${p.ward}/Bed ${p.bed} (${p.status === 'checked' ? t('status_stable') : t('status_unchecked')})
+              ${p.name} \u00B7 Ward ${p.ward}/Bed ${p.bed} (${p.status === 'checked' ? t('status_stable') : t('status_unchecked')})
             </option>
           `).join('')}
         </select>
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
         <button class="pri" onclick="openAddPatientModal()">+ ${t('btn_add_patient')}</button>
-        <button onclick="toggleSimulation()">${D.simulating ? '⏹️ ' + t('btn_stop_stream') : '▶️ ' + t('btn_simulate_stream')}</button>
+        <button onclick="toggleSimulation()">${D.simulating ? t('btn_stop_stream') : t('btn_simulate_stream')}</button>
       </div>
     </div>
   `;
@@ -545,7 +676,7 @@ function renderDoctorOverview() {
       <h3>${t('ward_census_title')}</h3>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
         <button class="pri" onclick="openAddPatientModal()">+ ${t('btn_add_patient')}</button>
-        <button onclick="toggleSimulation()">${D.simulating ? '⏹️ ' + t('btn_stop_stream') : '▶️ ' + t('btn_simulate_stream')}</button>
+        <button onclick="toggleSimulation()">${D.simulating ? t('btn_stop_stream') : t('btn_simulate_stream')}</button>
       </div>
     </div>
 
@@ -561,7 +692,7 @@ function renderDoctorOverview() {
             <div class="ac">
               <div>
                 <h3 style="margin-bottom:2px">${p.name}</h3>
-                <span class="mut" style="font-size:0.86rem">Ward ${p.ward} · Bed ${p.bed} · ${p.age}y ${p.gender}</span>
+                <span class="mut" style="font-size:0.86rem">Ward ${p.ward} \u00B7 Bed ${p.bed} \u00B7 ${p.age}y ${p.gender}</span>
               </div>
               <span class="chip ${p.status === 'checked' ? 'c-ok' : 'c-bad'}">
                 ${p.status === 'checked' ? t('status_stable') : t('status_unchecked')}
@@ -571,15 +702,15 @@ function renderDoctorOverview() {
             <div style="margin:14px 0 10px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">
               <div style="background:rgba(22,30,62,0.03);padding:8px;border-radius:14px">
                 <small class="mut" style="display:block;font-size:0.75rem">${t('vitals_hr')}</small>
-                <b style="font-size:1.15rem">${hr ? hr.v : '—'}</b> <small class="mut">bpm</small>
+                <b style="font-size:1.15rem">${hr ? hr.v : '\u2014'}</b> <small class="mut">bpm</small>
               </div>
               <div style="background:rgba(22,30,62,0.03);padding:8px;border-radius:14px">
-                <small class="mut" style="display:block;font-size:0.75rem">SpO₂</small>
-                <b style="font-size:1.15rem">${spo2 ? spo2.v : '—'}</b> <small class="mut">%</small>
+                <small class="mut" style="display:block;font-size:0.75rem">SpO\u2082</small>
+                <b style="font-size:1.15rem">${spo2 ? spo2.v : '\u2014'}</b> <small class="mut">%</small>
               </div>
               <div style="background:rgba(22,30,62,0.03);padding:8px;border-radius:14px">
                 <small class="mut" style="display:block;font-size:0.75rem">${t('vitals_temp')}</small>
-                <b style="font-size:1.15rem">${temp ? temp.v : '—'}</b> <small class="mut">°C</small>
+                <b style="font-size:1.15rem">${temp ? temp.v : '\u2014'}</b> <small class="mut">\u00B0C</small>
               </div>
             </div>
 
@@ -638,8 +769,8 @@ function renderPatientDetailView() {
             </span>
           </div>
           <div class="patient-meta-grid">
-            <span class="patient-meta-item">${t('meta_age_sex')}: <b>${p.age} yrs · ${p.gender}</b></span>
-            <span class="patient-meta-item">${t('meta_ward_bed')}: <b>Ward ${p.ward} · Bed ${p.bed}</b></span>
+            <span class="patient-meta-item">${t('meta_age_sex')}: <b>${p.age} yrs \u00B7 ${p.gender}</b></span>
+            <span class="patient-meta-item">${t('meta_ward_bed')}: <b>Ward ${p.ward} \u00B7 Bed ${p.bed}</b></span>
             <span class="patient-meta-item">${t('meta_condition')}: <b>${p.condition}</b></span>
             <span class="patient-meta-item">${t('meta_physician')}: <b>${p.doctor}</b></span>
             <span class="patient-meta-item">${t('meta_nurse')}: <b>${p.nurse}</b></span>
@@ -684,7 +815,7 @@ function renderPatientDetailView() {
           </span>
         </div>
         <div class="vital-val-row">
-          <span class="big2">${hr ? hr.v : '—'}</span>
+          <span class="big2">${hr ? hr.v : '\u2014'}</span>
           <small>bpm</small>
         </div>
         <span class="mut" style="font-size:0.84rem">
@@ -703,7 +834,7 @@ function renderPatientDetailView() {
           </span>
         </div>
         <div class="vital-val-row">
-          <span class="big2">${spo2 ? spo2.v : '—'}</span>
+          <span class="big2">${spo2 ? spo2.v : '\u2014'}</span>
           <small>%</small>
         </div>
         <span class="mut" style="font-size:0.84rem">Target: 95% - 100% on Room Air</span>
@@ -720,10 +851,10 @@ function renderPatientDetailView() {
           </span>
         </div>
         <div class="vital-val-row">
-          <span class="big2">${temp ? temp.v : '—'}</span>
-          <small>°C</small>
+          <span class="big2">${temp ? temp.v : '\u2014'}</span>
+          <small>\u00B0C</small>
         </div>
-        <span class="mut" style="font-size:0.84rem">Reference Range: 36.5 - 37.5 °C</span>
+        <span class="mut" style="font-size:0.84rem">Reference Range: 36.5 - 37.5 \u00B0C</span>
         ${renderSparkline(getVitalHistory(p.id, 'temp').map(r => r.v), 'var(--warn)')}
         <small class="mut" style="margin-top:6px;display:block">${t('th_timestamp')}: ${temp ? tm(temp.t) : 'Never'}</small>
       </div>
@@ -797,7 +928,7 @@ function renderPatientDetailView() {
               <tr>
                 <td>${tm(r.t)}</td>
                 <td><b>${{ hr: t('vitals_hr'), spo2: t('vitals_spo2'), temp: t('vitals_temp') }[r.k] || r.k}</b></td>
-                <td>${r.v} ${{ hr: 'bpm', spo2: '%', temp: '°C' }[r.k]}</td>
+                <td>${r.v} ${{ hr: 'bpm', spo2: '%', temp: '\u00B0C' }[r.k]}</td>
                 <td><span class="chip ${r.s === 'device' ? 'c-b' : 'c-n'}">${r.s === 'device' ? 'ESP32 Wearable' : 'Bedside Entry'}</span></td>
                 <td><span class="mut">${timeAgo(r.t)}</span></td>
               </tr>
@@ -827,7 +958,7 @@ function renderDeteriorationTriage() {
               <th>${t('th_patient')}</th>
               <th>${t('th_location')}</th>
               <th>${t('vitals_hr')}</th>
-              <th>SpO₂</th>
+              <th>SpO\u2082</th>
               <th>${t('vitals_temp')}</th>
               <th>EWS Score</th>
               <th>${t('th_status')}</th>
@@ -844,9 +975,9 @@ function renderDeteriorationTriage() {
                 <tr style="background:${p.status === 'unchecked' ? 'rgba(242,84,91,0.04)' : 'transparent'}">
                   <td><b>${p.name}</b><br><small class="mut">${p.age}y ${p.gender}</small></td>
                   <td>Ward ${p.ward} / Bed ${p.bed}</td>
-                  <td>${hr ? hr.v + ' bpm' : '—'}</td>
-                  <td>${spo2 ? spo2.v + ' %' : '—'}</td>
-                  <td>${temp ? temp.v + ' °C' : '—'}</td>
+                  <td>${hr ? hr.v + ' bpm' : '\u2014'}</td>
+                  <td>${spo2 ? spo2.v + ' %' : '\u2014'}</td>
+                  <td>${temp ? temp.v + ' \u00B0C' : '\u2014'}</td>
                   <td><b style="font-size:1.15rem;color:${ews.total >= 3 ? 'var(--pulse)' : 'var(--ok)'}">${ews.total}</b></td>
                   <td>
                     <span class="chip ${p.status === 'checked' ? 'c-ok' : 'c-bad'}">
@@ -908,7 +1039,7 @@ function renderAlertsTable(alerts) {
             return `
               <tr>
                 <td><span class="chip ${levelClass}">${(a.level || 'alert').toUpperCase()}</span></td>
-                <td><b>${p ? p.name : 'Unknown'}</b><br><small class="mut">${p ? `Ward ${p.ward}/Bed ${p.bed}` : '—'}</small></td>
+                <td><b>${p ? p.name : 'Unknown'}</b><br><small class="mut">${p ? `Ward ${p.ward}/Bed ${p.bed}` : '\u2014'}</small></td>
                 <td>
                   <b>${a.cat}</b>
                   <div style="font-size:0.86rem;color:var(--mut);margin-top:2px">${a.desc}</div>
@@ -973,7 +1104,7 @@ function renderUnreviewedConcerns() {
                       ${isReviewed ? t('status_checked') : t('status_unchecked')}
                     </span>
                   </td>
-                  <td><b>${p ? p.name : 'Unknown'}</b><br><small class="mut">${p ? `Ward ${p.ward}/Bed ${p.bed}` : '—'}</small></td>
+                  <td><b>${p ? p.name : 'Unknown'}</b><br><small class="mut">${p ? `Ward ${p.ward}/Bed ${p.bed}` : '\u2014'}</small></td>
                   <td><b>${c.attender}</b></td>
                   <td><span class="chip c-b">${c.type}</span></td>
                   <td style="max-width:320px">
@@ -1009,8 +1140,8 @@ function renderDeviceHub() {
           <p class="mut">${t('device_section_subtitle')}</p>
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap">
-          <button class="pri" onclick="connectSerial()">🔌 ${t('btn_connect_serial')}</button>
-          <button onclick="toggleSimulation()">${D.simulating ? '⏹️ ' + t('btn_stop_stream') : '▶️ ' + t('btn_simulate_stream')}</button>
+          <button class="pri" onclick="connectSerial()">\u{1F50C} ${t('btn_connect_serial')}</button>
+          <button onclick="toggleSimulation()">${D.simulating ? t('btn_stop_stream') : t('btn_simulate_stream')}</button>
         </div>
       </div>
 
@@ -1145,8 +1276,8 @@ function renderNurseBedsideTriage() {
           <div class="card" style="border: 2px solid var(--pulse); box-shadow: 0 0 20px rgba(242,84,91,0.25)">
             <div class="ac">
               <div>
-                <h3 style="color:var(--pulse)">� ï¸ ${p.name}</h3>
-                <span class="mut" style="font-size:0.88rem">Ward ${p.ward} · Bed ${p.bed}</span>
+                <h3 style="color:var(--pulse)">${p.name}</h3>
+                <span class="mut" style="font-size:0.88rem">Ward ${p.ward} \u00B7 Bed ${p.bed}</span>
               </div>
               <span class="chip c-bad">${t('status_unchecked')}</span>
             </div>
@@ -1154,7 +1285,7 @@ function renderNurseBedsideTriage() {
             <div style="margin:14px 0;background:rgba(242,84,91,0.06);padding:10px;border-radius:14px">
               <b>EWS Score: ${ews.total}</b>
               <div style="font-size:0.86rem;margin-top:4px" class="mut">
-                ${t('vitals_hr')}: ${hr ? hr.v + ' bpm' : 'N/A'} | SpO₂: ${spo2 ? spo2.v + ' %' : 'N/A'} | ${t('vitals_temp')}: ${temp ? temp.v + ' °C' : 'N/A'}
+                ${t('vitals_hr')}: ${hr ? hr.v + ' bpm' : 'N/A'} | SpO\u2082: ${spo2 ? spo2.v + ' %' : 'N/A'} | ${t('vitals_temp')}: ${temp ? temp.v + ' \u00B0C' : 'N/A'}
               </div>
             </div>
 
@@ -1193,7 +1324,7 @@ function renderNurseBedsideTriage() {
                 <tr>
                   <td><b>${p.name}</b></td>
                   <td>Ward ${p.ward} / Bed ${p.bed}</td>
-                  <td>HR: ${hr ? hr.v : '—'} | SpO₂: ${spo2 ? spo2.v + '%' : '—'} | T: ${temp ? temp.v + '°C' : '—'}</td>
+                  <td>HR: ${hr ? hr.v : '\u2014'} | SpO\u2082: ${spo2 ? spo2.v + '%' : '\u2014'} | T: ${temp ? temp.v + '\u00B0C' : '\u2014'}</td>
                   <td>${p.condition}</td>
                   <td><span class="chip ${p.status === 'checked' ? 'c-ok' : 'c-bad'}">${p.status === 'checked' ? t('status_checked') : t('status_unchecked')}</span></td>
                   <td>
@@ -1250,7 +1381,7 @@ function renderNurseMedReviews() {
               const isVerified = m.status === 'verified';
               return `
                 <tr>
-                  <td><b>${p ? p.name : 'Unknown'}</b><br><small class="mut">${p ? `Ward ${p.ward}/Bed ${p.bed}` : '—'}</small></td>
+                  <td><b>${p ? p.name : 'Unknown'}</b><br><small class="mut">${p ? `Ward ${p.ward}/Bed ${p.bed}` : '\u2014'}</small></td>
                   <td><b>${m.med}</b></td>
                   <td>${m.dose}</td>
                   <td>${m.due}</td>
@@ -1287,7 +1418,7 @@ function renderNurseQuickVitals() {
       
       <label for="qv_pid">${t('th_patient')}</label>
       <select id="qv_pid">
-        ${S.p.map(p => `<option value="${p.id}">${p.name} · Ward ${p.ward}/Bed ${p.bed}</option>`).join('')}
+        ${S.p.map(p => `<option value="${p.id}">${p.name} \u00B7 Ward ${p.ward}/Bed ${p.bed}</option>`).join('')}
       </select>
 
       <label for="qv_hr">${t('vitals_hr')} (bpm)</label>
@@ -1296,7 +1427,7 @@ function renderNurseQuickVitals() {
       <label for="qv_spo2">${t('vitals_spo2')} (%)</label>
       <input id="qv_spo2" type="number" placeholder="e.g. 98">
 
-      <label for="qv_temp">${t('vitals_temp')} (°C)</label>
+      <label for="qv_temp">${t('vitals_temp')} (\u00B0C)</label>
       <input id="qv_temp" type="number" step="0.1" placeholder="e.g. 36.8">
 
       <button class="pri" onclick="saveQuickVitals()">${t('btn_save')}</button>
@@ -1322,8 +1453,8 @@ function renderPatientPortalVitals() {
         <p class="mut">${t('patRoleDesc')}</p>
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
-        <button class="pri" onclick="openVoiceMode()">✨ ${t('btn_ask_voice')}</button>
-        <button class="red" onclick="reportPatientSymptom(${p.id})">🔔 ${t('btn_call_nurse')}</button>
+        <button class="pri" onclick="openVoiceMode()">${t('btn_ask_voice')}</button>
+        <button class="red" onclick="reportPatientSymptom(${p.id})">\u{1F514} ${t('btn_call_nurse')}</button>
       </div>
     </div>
 
@@ -1346,7 +1477,7 @@ function renderPatientPortalVitals() {
           <span class="chip c-b">${t('status_stable')}</span>
         </div>
         <div class="vital-val-row">
-          <span class="big2">${hr ? hr.v : '—'}</span>
+          <span class="big2">${hr ? hr.v : '\u2014'}</span>
           <small>bpm</small>
         </div>
         <p class="mut" style="font-size:0.86rem">Your resting baseline is ${p.base || 72} bpm.</p>
@@ -1359,7 +1490,7 @@ function renderPatientPortalVitals() {
           <span class="chip c-ok">${t('status_stable')}</span>
         </div>
         <div class="vital-val-row">
-          <span class="big2">${spo2 ? spo2.v : '—'}</span>
+          <span class="big2">${spo2 ? spo2.v : '\u2014'}</span>
           <small>%</small>
         </div>
         <p class="mut" style="font-size:0.86rem">Healthy oxygenation level.</p>
@@ -1372,8 +1503,8 @@ function renderPatientPortalVitals() {
           <span class="chip c-ok">${t('status_stable')}</span>
         </div>
         <div class="vital-val-row">
-          <span class="big2">${temp ? temp.v : '—'}</span>
-          <small>°C</small>
+          <span class="big2">${temp ? temp.v : '\u2014'}</span>
+          <small>\u00B0C</small>
         </div>
         <p class="mut" style="font-size:0.86rem">Normal body temperature range.</p>
         ${renderSparkline(getVitalHistory(p.id, 'temp').map(r => r.v), 'var(--warn)')}
@@ -1393,8 +1524,8 @@ function renderPatientPredictedStatus() {
       <h2>${t('nav_predicted_status')}</h2>
       <p style="font-size:1.15rem;margin:16px 0">
         ${ews.alert ?
-          "� ï¸ A change was noticed in your latest readings. Your nursing team has been alerted for a bedside review." :
-          "✅ Your latest vital readings are stable and within your expected recovery range."}
+          "\u{26A0}\u{FE0F} A change was noticed in your latest readings. Your nursing team has been alerted for a bedside review." :
+          "Ã¢Å“â€¦ Your latest vital readings are stable and within your expected recovery range."}
       </p>
 
       <div class="ews-grid">
@@ -1437,7 +1568,7 @@ function renderPatientHealthHistory() {
               <tr>
                 <td>${tm(r.t)}</td>
                 <td>${{ hr: t('vitals_hr'), spo2: t('vitals_spo2'), temp: t('vitals_temp') }[r.k] || r.k}</td>
-                <td><b>${r.v} ${{ hr: 'bpm', spo2: '%', temp: '°C' }[r.k]}</b></td>
+                <td><b>${r.v} ${{ hr: 'bpm', spo2: '%', temp: '\u00B0C' }[r.k]}</b></td>
                 <td><span class="chip c-b">${r.s === 'device' ? 'CLYNORA Wearable' : 'Manual Entry'}</span></td>
               </tr>
             `).join('')}
@@ -1499,7 +1630,7 @@ function renderPatientChatView() {
           <h2>${t('nav_ask_assistant')}</h2>
           <p class="mut">${t('assistant_subtitle')}</p>
         </div>
-        <button class="pri" onclick="openVoiceMode()">✨ ${t('btn_voice_mode')}</button>
+        <button class="pri" onclick="openVoiceMode()">${t('btn_voice_mode')}</button>
       </div>
 
       <div style="background:rgba(22,30,62,0.03);border-radius:20px;padding:20px;margin-bottom:20px">
@@ -1544,7 +1675,7 @@ function renderAttenderStatus() {
       <div class="ac">
         <div>
           <h2>${p.name} - ${t('nav_att_status')}</h2>
-          <p class="mut">Ward ${p.ward} · Bed ${p.bed} · Attending Doctor: ${p.doctor}</p>
+          <p class="mut">Ward ${p.ward} \u00B7 Bed ${p.bed} \u00B7 Attending Doctor: ${p.doctor}</p>
         </div>
         <span class="chip ${p.status === 'checked' ? 'c-ok' : 'c-bad'}">
           ${p.status === 'checked' ? t('status_checked') : t('status_unchecked')}
@@ -1561,7 +1692,7 @@ function renderAttenderStatus() {
       </div>
 
       <div class="ac">
-        <button class="pri" onclick="nav('a_submit')">📝 ${t('nav_att_submit')}</button>
+        <button class="pri" onclick="nav('a_submit')">\u{1F4E4}Â ${t('nav_att_submit')}</button>
         <button onclick="nav('a_readings')">${t('nav_att_readings')}</button>
       </div>
     </div>
@@ -2035,7 +2166,7 @@ function openManualVitalsModal(pid) {
       <label for="mv_spo2">${t('vitals_spo2')} (%)</label>
       <input id="mv_spo2" type="number" placeholder="e.g. 97">
 
-      <label for="mv_temp">${t('vitals_temp')} (°C)</label>
+      <label for="mv_temp">${t('vitals_temp')} (\u00B0C)</label>
       <input id="mv_temp" type="number" step="0.1" placeholder="e.g. 37.0">
 
       <button class="pri" onclick="saveManualVitals(${pid})">${t('btn_save')}</button>
@@ -2069,7 +2200,7 @@ function openQuickVitalModal(defaultPid) {
       
       <label for="qvm_pid">${t('th_patient')}</label>
       <select id="qvm_pid">
-        ${S.p.map(p => `<option value="${p.id}" ${p.id === pid ? 'selected' : ''}>${p.name} · Ward ${p.ward}/Bed ${p.bed}</option>`).join('')}
+        ${S.p.map(p => `<option value="${p.id}" ${p.id === pid ? 'selected' : ''}>${p.name} \u00B7 Ward ${p.ward}/Bed ${p.bed}</option>`).join('')}
       </select>
 
       <label for="qvm_hr">${t('vitals_hr')} (bpm)</label>
@@ -2078,7 +2209,7 @@ function openQuickVitalModal(defaultPid) {
       <label for="qvm_spo2">${t('vitals_spo2')} (%)</label>
       <input id="qvm_spo2" type="number" placeholder="e.g. 98">
 
-      <label for="qvm_temp">${t('vitals_temp')} (°C)</label>
+      <label for="qvm_temp">${t('vitals_temp')} (\u00B0C)</label>
       <input id="qvm_temp" type="number" step="0.1" placeholder="e.g. 36.8">
 
       <button class="pri" onclick="submitQuickVitalModal()">${t('btn_save')}</button>
@@ -2158,7 +2289,7 @@ function openAcknowledgeModal(alertId) {
   modal(`
     <div class="fm">
       <h2>${t('modal_ack_alert_title')}</h2>
-      <p class="mut">Alert: <b>${alert.cat}</b> — ${alert.desc}</p>
+      <p class="mut">Alert: <b>${alert.cat}</b> \u2014 ${alert.desc}</p>
       
       <label for="ack_note">${t('lbl_resolution_note')}</label>
       <textarea id="ack_note" rows="3" placeholder="e.g. Bedside assessment completed; oxygen administered at 2L/min..."></textarea>
@@ -2347,6 +2478,15 @@ updateNavHeader();
 if (U) {
   openApp();
 }
+
+
+
+
+
+
+
+
+
 
 
 

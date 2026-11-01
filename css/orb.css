@@ -1,4 +1,4 @@
-/* CLYNORA Voice Chat UI — Glowing Interactive AI Voice Orb
+﻿/* CLYNORA Voice Chat UI — Glowing Interactive AI Voice Orb
    Inspired by ChatGPT voice mode and modern medical AI interfaces.
    Deep luminous sphere with multi-layer cyan, teal, blue, and violet lighting. */
 
@@ -425,4 +425,11 @@
   width: 24px;
   height: 24px;
   fill: currentColor;
+}
+
+/* Sidebar menu toggle */
+#mb {
+  background: #2563eb !important;
+  color: #ffffff !important;
+  border: 1px solid #2563eb !important;
 }

@@ -1,0 +1,428 @@
+﻿/* CLYNORA Voice Chat UI — Glowing Interactive AI Voice Orb
+   Inspired by ChatGPT voice mode and modern medical AI interfaces.
+   Deep luminous sphere with multi-layer cyan, teal, blue, and violet lighting. */
+
+#voiceOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 250;
+  background: radial-gradient(circle at 50% 45%, #182245 0%, #0e1428 65%, #080c18 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(24px + env(safe-area-inset-top, 0px)) 24px calc(28px + env(safe-area-inset-bottom, 0px));
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: scale(0.96);
+  color: #fff;
+  overflow: hidden;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+#voiceOverlay.active {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
+}
+
+/* Ambient background glow */
+.orb-ambient-bg {
+  position: absolute;
+  width: 580px;
+  height: 580px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(58, 91, 217, 0.22) 0%, rgba(45, 212, 191, 0.12) 40%, rgba(129, 140, 248, 0.04) 70%, transparent 85%);
+  filter: blur(60px);
+  top: 45%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  animation: ambientFloat 8s ease-in-out infinite alternate;
+}
+
+@keyframes ambientFloat {
+  0% { transform: translate(-50%, -50%) scale(0.95); opacity: 0.6; }
+  100% { transform: translate(-50%, -52%) scale(1.15); opacity: 0.85; }
+}
+
+/* Voice Top Bar */
+.voice-top-bar {
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 10;
+}
+
+.voice-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.voice-brand-logo {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  display: grid;
+  place-items: center;
+}
+
+.voice-brand-logo svg {
+  width: 20px;
+  fill: #f2545b;
+}
+
+.voice-brand-title {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-weight: 800;
+  font-size: 1.15rem;
+  letter-spacing: 0.03em;
+  color: #fff;
+}
+
+.voice-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.voice-lang-select {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.voice-lang-select:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.voice-lang-select option {
+  background: #182245;
+  color: #fff;
+}
+
+.voice-icon-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.25s;
+}
+
+.voice-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  transform: translateY(-2px);
+}
+
+/* Center Orb Stage */
+.orb-stage-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 10;
+  margin: auto 0;
+  width: 100%;
+}
+
+.orb-wrapper {
+  position: relative;
+  width: 320px;
+  height: 320px;
+  display: grid;
+  place-items: center;
+}
+
+@media (max-width: 600px) {
+  .orb-wrapper {
+    width: 250px;
+    height: 250px;
+  }
+}
+
+/* HTML5 Canvas Orb */
+#voiceOrbCanvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* Ambient Concentric Light Wave Rings */
+.orb-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1.5px solid rgba(56, 189, 248, 0.25);
+  pointer-events: none;
+  opacity: 0;
+  transition: all 0.5s ease-out;
+}
+
+.orb-ring-1 {
+  width: 340px;
+  height: 340px;
+  animation: pulseRing 3.6s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+}
+
+.orb-ring-2 {
+  width: 400px;
+  height: 400px;
+  border-color: rgba(45, 212, 191, 0.2);
+  animation: pulseRing 3.6s cubic-bezier(0.2, 0.8, 0.2, 1) infinite 1.2s;
+}
+
+.orb-ring-3 {
+  width: 460px;
+  height: 460px;
+  border-color: rgba(129, 140, 248, 0.15);
+  animation: pulseRing 3.6s cubic-bezier(0.2, 0.8, 0.2, 1) infinite 2.4s;
+}
+
+@keyframes pulseRing {
+  0% { transform: scale(0.8); opacity: 0; }
+  50% { opacity: 0.5; }
+  100% { transform: scale(1.25); opacity: 0; }
+}
+
+/* Status Label & Status Badge */
+.voice-status-wrapper {
+  margin-top: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.voice-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 18px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  letter-spacing: 0.02em;
+  transition: all 0.3s;
+}
+
+.voice-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #38bdf8;
+  box-shadow: 0 0 8px #38bdf8;
+  transition: all 0.3s;
+}
+
+/* State specific colors */
+.voice-status-pill.listening .voice-status-dot {
+  background: #2dd4bf;
+  box-shadow: 0 0 12px #2dd4bf;
+  animation: statusPulse 1s infinite alternate;
+}
+
+.voice-status-pill.processing .voice-status-dot {
+  background: #818cf8;
+  box-shadow: 0 0 12px #818cf8;
+  animation: statusSpin 1s infinite linear;
+}
+
+.voice-status-pill.speaking .voice-status-dot {
+  background: #38bdf8;
+  box-shadow: 0 0 12px #38bdf8;
+  animation: statusPulse 0.6s infinite alternate;
+}
+
+.voice-status-pill.muted .voice-status-dot {
+  background: #f59e0b;
+  box-shadow: 0 0 8px #f59e0b;
+}
+
+.voice-status-pill.error .voice-status-dot {
+  background: #f2545b;
+  box-shadow: 0 0 8px #f2545b;
+}
+
+@keyframes statusPulse {
+  0% { transform: scale(0.9); opacity: 0.7; }
+  100% { transform: scale(1.4); opacity: 1; }
+}
+
+/* Live Transcription Display Area */
+.voice-transcription-box {
+  margin-top: 18px;
+  max-width: 620px;
+  min-height: 52px;
+  padding: 12px 22px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  text-align: center;
+  font-size: 1.05rem;
+  line-height: 1.5;
+  color: #cbd5e1;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.voice-transcription-box.active {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(56, 189, 248, 0.25);
+  color: #fff;
+}
+
+/* Interactive State Tester Bar for Reviewers & Judges */
+.voice-state-tester {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.state-test-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: none;
+  transition: all 0.2s;
+}
+
+.state-test-btn:hover, .state-test-btn.active {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: rgba(56, 189, 248, 0.5);
+  color: #38bdf8;
+  transform: none;
+}
+
+/* Quick Suggested Voice Queries Bar */
+.voice-quick-prompts {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+  max-width: 680px;
+}
+
+.voice-prompt-chip {
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: #e0f2fe;
+  padding: 6px 14px;
+  border-radius: 16px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: none;
+}
+
+.voice-prompt-chip:hover {
+  background: rgba(56, 189, 248, 0.28);
+  border-color: rgba(56, 189, 248, 0.65);
+  color: #fff;
+  transform: translateY(-2px);
+}
+
+/* Bottom Controls Bar */
+.voice-bottom-controls {
+  width: 100%;
+  max-width: 640px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  z-index: 10;
+  padding-top: 16px;
+}
+
+.voice-control-btn {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.09);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #fff;
+  cursor: pointer;
+  padding: 0;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.voice-control-btn:hover {
+  transform: scale(1.08);
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.voice-control-btn:active {
+  transform: scale(0.95);
+}
+
+.voice-control-btn.active-mic {
+  background: linear-gradient(135deg, #0ea5e9, #2563eb);
+  border-color: #60a5fa;
+  box-shadow: 0 0 25px rgba(14, 165, 233, 0.5);
+}
+
+.voice-control-btn.muted-mic {
+  background: #f59e0b;
+  border-color: #fbbf24;
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+}
+
+.voice-control-btn.end-btn {
+  background: linear-gradient(135deg, #f2545b, #dc2626);
+  border-color: #f87171;
+  box-shadow: 0 0 25px rgba(242, 84, 91, 0.45);
+}
+
+.voice-control-btn.text-btn {
+  width: 50px;
+  height: 50px;
+}
+
+.voice-control-btn svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
